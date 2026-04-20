@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d1b69;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="globe" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="256" height="256" rx="32" fill="url(#bg)"/>
+  <!-- Globe circle -->
+  <circle cx="128" cy="120" r="64" fill="none" stroke="url(#globe)" stroke-width="4"/>
+  <!-- Globe horizontal lines -->
+  <ellipse cx="128" cy="120" rx="64" ry="24" fill="none" stroke="url(#globe)" stroke-width="2.5"/>
+  <ellipse cx="128" cy="120" rx="64" ry="48" fill="none" stroke="url(#globe)" stroke-width="2.5"/>
+  <!-- Globe vertical line -->
+  <line x1="128" y1="56" x2="128" y2="184" stroke="url(#globe)" stroke-width="2.5"/>
+  <!-- Globe horizontal center -->
+  <line x1="64" y1="120" x2="192" y2="120" stroke="url(#globe)" stroke-width="2.5"/>
+  <!-- Code brackets -->
+  <text x="68" y="218" font-family="monospace" font-size="36" font-weight="bold" fill="#a78bfa">&lt;</text>
+  <text x="98" y="218" font-family="monospace" font-size="28" font-weight="bold" fill="#c4b5fd">/</text>
+  <text x="118" y="218" font-family="monospace" font-size="36" font-weight="bold" fill="#a78bfa">&gt;</text>
+  <!-- WK text -->
+  <text x="152" y="216" font-family="sans-serif" font-size="28" font-weight="bold" fill="#e0e7ff">WK</text>
+</svg>

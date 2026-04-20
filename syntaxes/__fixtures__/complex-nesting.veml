@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<veml>
+  <metadata>
+    <title>Complex Nesting Example</title>
+    <synchronizationservice type="websocket" host="ws://localhost" port="8080" />
+  </metadata>
+
+  <environment>
+    <background>
+      <panorama src="skybox.hdr" />
+    </background>
+
+    <!-- Top-level container entity with nested children -->
+    <container id="building" tag="structure">
+      <scaletransform>
+        <position x="10" y="0" z="5" />
+        <rotation x="0" y="0.707" z="0" w="0.707" />
+        <scale x="2" y="2" z="2" />
+      </scaletransform>
+
+      <!-- Nested child entities -->
+      <container id="floor-1" tag="floor">
+        <scaletransform>
+          <position x="0" y="0" z="0" />
+        </scaletransform>
+
+        <container id="room-101">
+          <scaletransform>
+            <position x="0" y="0" z="0" />
+          </scaletransform>
+          <mesh id="room-walls" src="models/room.glb" />
+
+          <mesh id="desk" src="models/desk.glb" static="true">
+            <scaletransform>
+              <position x="2" y="0" z="1" />
+              <rotation x="0" y="-0.707" z="0" w="0.707" />
+            </scaletransform>
+          </mesh>
+
+          <mesh id="chair" src="models/chair.glb">
+            <scaletransform>
+              <position x="2" y="0" z="2" />
+            </scaletransform>
+          </mesh>
+        </container>
+      </container>
+
+      <container id="floor-2" tag="floor">
+        <scaletransform>
+          <position x="0" y="3" z="0" />
+        </scaletransform>
+        <mesh id="floor2-mesh" src="models/floor2.glb" />
+      </container>
+    </container>
+
+    <!-- Entity with many attributes -->
+    <mesh id="particle-emitter" tag="fx" visible="true" interaction-layer="effects" src="models/emitter.glb">
+      <scaletransform>
+        <position x="0" y="5" z="0" />
+      </scaletransform>
+      <synchronizer type="transform" />
+    </mesh>
+
+    <light id="ambient-light" type="point" intensity="0.8" color="#FFE0B0" range="15" />
+  </environment>
+</veml>

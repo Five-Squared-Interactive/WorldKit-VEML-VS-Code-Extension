@@ -1,0 +1,33 @@
+<!-- Malformed VEML for testing graceful degradation -->
+
+<!-- Unclosed tag -->
+<veml>
+  <metadata>
+    <title>Broken
+
+  <!-- Mismatched closing tag -->
+  <environment>
+    <mesh id="mismatch" src="test.glb">
+    </meh>
+
+    <!-- Unterminated string -->
+    <mesh id="bad-string" src="unterminated>
+    </mesh>
+
+    <!-- Bare ampersand -->
+    <text id="bad-amp" content="Tom & Jerry" />
+
+    <!-- Valid entity reference for comparison -->
+    <text id="good-ref" content="Tom &amp; Jerry" />
+
+    <!-- Empty closing tag -->
+    </>
+
+    <!-- Tag after malformed section should still highlight -->
+    <character id="recovery" tag="npc">
+      <scaletransform>
+        <position x="1" y="2" z="3" />
+      </scaletransform>
+    </character>
+  </environment>
+</veml>

@@ -1,0 +1,40 @@
+# Source files
+.vscode/**
+client/**
+server/**
+shared/**
+test/**
+e2e/**
+node_modules/**
+
+# Config files
+tsconfig.base.json
+tsconfig*.json
+vitest.config.ts
+esbuild.mjs
+eslint.config.mjs
+.prettierrc
+.gitignore
+
+# CI/CD
+.github/**
+
+# Test files
+**/*.test.ts
+**/*.test.veml
+**/__fixtures__/**
+**/__tests__/**
+
+# Build artifacts to exclude
+dist/*.map
+dist/*.tsbuildinfo
+dist/client/**
+dist/server/**
+dist/shared/**
+coverage/**
+*.vsix
+*.ts
+
+# Misc
+assets/icon.svg
+assets/screenshots/.gitkeep

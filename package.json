@@ -1,0 +1,134 @@
+{
+  "name": "worldkit-vscode",
+  "displayName": "WorldKit VEML",
+  "description": "VEML language support for building virtual worlds — syntax highlighting, validation, autocomplete, and scene navigation.",
+  "version": "0.1.0",
+  "publisher": "fivesquared",
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/five-squared/NewMonorepo/tree/main/worldkit-vscode",
+  "bugs": {
+    "url": "https://github.com/five-squared/NewMonorepo/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "3D",
+    "virtual world",
+    "VEML",
+    "WorldKit",
+    "WebVerse",
+    "scene",
+    "XML"
+  ],
+  "activationEvents": [
+    "onLanguage:veml",
+    "workspaceContains:**/*.veml",
+    "workspaceContains:**/.vemlproject"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Syntax highlighting works in untrusted workspaces. Validation, autocomplete, and other language features require a trusted workspace.",
+      "restrictedConfigurations": []
+    }
+  },
+  "main": "./dist/client.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "veml",
+        "extensions": [
+          ".veml"
+        ],
+        "aliases": [
+          "VEML",
+          "veml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "veml",
+        "scopeName": "text.xml.veml",
+        "path": "./syntaxes/veml.tmLanguage.json"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "worldkit-vscode.sceneOutline",
+          "name": "Scene Outline",
+          "when": "worldkit-vscode:hasVemlFiles"
+        }
+      ]
+    },
+    "snippets": [
+      {
+        "language": "veml",
+        "path": "./snippets/veml.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "worldkit-vscode.showSceneOutline",
+        "title": "Show Scene Outline",
+        "category": "WorldKit"
+      },
+      {
+        "command": "worldkit-vscode.validateAll",
+        "title": "Validate All VEML",
+        "category": "WorldKit"
+      },
+      {
+        "command": "worldkit-vscode.newWorldProject",
+        "title": "New World Project",
+        "category": "WorldKit"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "lint": "eslint client/src server/src shared/src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "node esbuild.mjs --production && vsce package",
+    "compile": "tsc -b client server shared"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/five-squared/NewMonorepo.git",
+    "directory": "worldkit-vscode"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.28.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "saxes": "^6.0.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^4.1.2",
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
+  }
+}

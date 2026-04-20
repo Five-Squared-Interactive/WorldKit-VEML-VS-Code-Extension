@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A complete valid VEML 3.0 world definition -->
+<veml>
+  <metadata>
+    <title>My World</title>
+    <capability name="physics" />
+    <script src="scripts/main.js" />
+    <inputevent name="jump" input="space" />
+    <controlflags third-person="false" vr-mode="true" />
+  </metadata>
+
+  <environment>
+    <background>
+      <lite-procedural-sky top-color="#87CEEB" horizon-color="#E0E8F0" bottom-color="#8B7355" />
+    </background>
+
+    <effects>
+      <lite-fog color="#CCCCCC" density="0.01" />
+    </effects>
+
+    <character id="player" tag="player">
+      <scaletransform>
+        <position x="0" y="1.5" z="0" />
+        <rotation x="0" y="0" z="0" w="1" />
+        <scale x="1" y="1" z="1" />
+      </scaletransform>
+    </character>
+
+    <mesh id="building" src="models/building.glb">
+      <scaletransform>
+        <position x="5" y="0" z="3" />
+        <rotation x="0" y="0.707" z="0" w="0.707" />
+        <scale x="2" y="2" z="2" />
+      </scaletransform>
+    </mesh>
+
+    <light id="main-light" type="directional">
+      <scaletransform>
+        <position x="0" y="10" z="0" />
+      </scaletransform>
+    </light>
+
+    <audio id="ambient-sound" src="sounds/ambient-forest.mp3" volume="0.5" loop="true" />
+
+    <terrain id="ground" src="terrain/heightmap.png" />
+
+    <canvas id="main-ui">
+      <canvastransform>
+        <position-percent x="0.1" y="0.1" />
+        <size-percent x="0.8" y="0.2" />
+      </canvastransform>
+      <text id="welcome-text" content="Welcome to &amp; the World" />
+      <button id="start-btn" label="Start" on-click="beginGame" />
+    </canvas>
+  </environment>
+</veml>

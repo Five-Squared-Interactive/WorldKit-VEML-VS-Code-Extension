@@ -1,0 +1,275 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "text.xml.veml",
+  "name": "VEML",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#cdata" },
+    { "include": "#processing-instructions" },
+    { "include": "#doctype" },
+    { "include": "#veml-structure-open-tags" },
+    { "include": "#veml-entity-open-tags" },
+    { "include": "#veml-transform-open-tags" },
+    { "include": "#veml-metadata-open-tags" },
+    { "include": "#veml-structure-close-tags" },
+    { "include": "#veml-entity-close-tags" },
+    { "include": "#veml-transform-close-tags" },
+    { "include": "#veml-metadata-close-tags" },
+    { "include": "#generic-close-tag" },
+    { "include": "#generic-open-tag" },
+    { "include": "#entity-reference" },
+    { "include": "#bare-ampersand" }
+  ],
+  "repository": {
+    "comments": {
+      "begin": "<!--",
+      "end": "-->",
+      "name": "comment.block.veml",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.comment.veml" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.comment.veml" }
+      }
+    },
+
+    "cdata": {
+      "begin": "<!\\[CDATA\\[",
+      "end": "\\]\\]>",
+      "name": "string.unquoted.cdata.veml",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.string.begin.veml" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.veml" }
+      }
+    },
+
+    "processing-instructions": {
+      "begin": "<\\?",
+      "end": "\\?>",
+      "name": "meta.tag.preprocessor.veml",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.tag.veml" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.tag.veml" }
+      },
+      "patterns": [
+        { "include": "#tag-stuff" }
+      ]
+    },
+
+    "doctype": {
+      "begin": "(<!)(DOCTYPE)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "keyword.other.doctype.veml" }
+      },
+      "end": ">",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.sgml.doctype.veml",
+      "patterns": [
+        {
+          "match": "[-\\w.:]+",
+          "name": "variable.documentroot.veml"
+        }
+      ]
+    },
+
+    "veml-structure-open-tags": {
+      "begin": "(<)(veml|metadata|environment|background|effects)(?=\\s|/?>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.structure.world.veml" }
+      },
+      "end": "(/?>)|(?=<)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.structure.world.veml",
+      "patterns": [
+        { "include": "#tag-stuff" }
+      ]
+    },
+
+    "veml-structure-close-tags": {
+      "match": "(</)(veml|metadata|environment|background|effects)\\s*(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.structure.world.veml" },
+        "3": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.structure.world.veml"
+    },
+
+    "veml-entity-open-tags": {
+      "begin": "(<)(container|audio|mesh|cubemesh|spheremesh|capsulemesh|cylindermesh|planemesh|torusmesh|conemesh|rectangularpyramidmesh|tetrahedronmesh|prismmesh|archmesh|character|canvas|html|button|input|image|light|terrain|text|voxel|water|automobile|airplane|waterblocker)(?=\\s|/?>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.structure.entity.veml" }
+      },
+      "end": "(/?>)|(?=<)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.structure.entity.veml",
+      "patterns": [
+        { "include": "#tag-stuff" }
+      ]
+    },
+
+    "veml-entity-close-tags": {
+      "match": "(</)(container|audio|mesh|cubemesh|spheremesh|capsulemesh|cylindermesh|planemesh|torusmesh|conemesh|rectangularpyramidmesh|tetrahedronmesh|prismmesh|archmesh|character|canvas|html|button|input|image|light|terrain|text|voxel|water|automobile|airplane|waterblocker)\\s*(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.structure.entity.veml" },
+        "3": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.structure.entity.veml"
+    },
+
+    "veml-transform-open-tags": {
+      "begin": "(<)(scaletransform|sizetransform|canvastransform|position|rotation|scale|size|position-percent|size-percent|synchronizer|placement-socket)(?=\\s|/?>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.component.veml" }
+      },
+      "end": "(/?>)|(?=<)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.component.veml",
+      "patterns": [
+        { "include": "#tag-stuff" }
+      ]
+    },
+
+    "veml-transform-close-tags": {
+      "match": "(</)(scaletransform|sizetransform|canvastransform|position|rotation|scale|size|position-percent|size-percent|synchronizer|placement-socket)\\s*(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.component.veml" },
+        "3": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.component.veml"
+    },
+
+    "veml-metadata-open-tags": {
+      "begin": "(<)(title|capability|script|inputevent|controlflags|synchronizationservice|panorama|color|lite-procedural-sky|lite-fog)(?=\\s|/?>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.ui.veml" }
+      },
+      "end": "(/?>)|(?=<)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.ui.veml",
+      "patterns": [
+        { "include": "#tag-stuff" }
+      ]
+    },
+
+    "veml-metadata-close-tags": {
+      "match": "(</)(title|capability|script|inputevent|controlflags|synchronizationservice|panorama|color|lite-procedural-sky|lite-fog)\\s*(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.ui.veml" },
+        "3": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.ui.veml"
+    },
+
+    "generic-open-tag": {
+      "begin": "(<)([-\\w.:]+)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.localname.veml" }
+      },
+      "end": "(/?>)|(?=<)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.other.veml",
+      "patterns": [
+        { "include": "#tag-stuff" }
+      ]
+    },
+
+    "generic-close-tag": {
+      "match": "(</)([-\\w.:]+)\\s*(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.veml" },
+        "2": { "name": "entity.name.tag.localname.veml" },
+        "3": { "name": "punctuation.definition.tag.veml" }
+      },
+      "name": "meta.tag.other.veml"
+    },
+
+    "tag-stuff": {
+      "patterns": [
+        { "include": "#attribute-double-quoted" },
+        { "include": "#attribute-single-quoted" },
+        { "include": "#attribute-name-only" }
+      ]
+    },
+
+    "attribute-double-quoted": {
+      "begin": "([-\\w.:]+)(=)(\")",
+      "beginCaptures": {
+        "1": { "name": "entity.other.attribute-name.veml" },
+        "2": { "name": "punctuation.separator.key-value.veml" },
+        "3": { "name": "punctuation.definition.string.begin.veml" }
+      },
+      "end": "(\")|((?=[>\\n]))",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.veml" }
+      },
+      "contentName": "string.quoted.double.veml",
+      "patterns": [
+        { "include": "#entity-reference" },
+        { "include": "#bare-ampersand" }
+      ]
+    },
+
+    "attribute-single-quoted": {
+      "begin": "([-\\w.:]+)(=)(')",
+      "beginCaptures": {
+        "1": { "name": "entity.other.attribute-name.veml" },
+        "2": { "name": "punctuation.separator.key-value.veml" },
+        "3": { "name": "punctuation.definition.string.begin.veml" }
+      },
+      "end": "(')|((?=[>\\n]))",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.veml" }
+      },
+      "contentName": "string.quoted.single.veml",
+      "patterns": [
+        { "include": "#entity-reference" },
+        { "include": "#bare-ampersand" }
+      ]
+    },
+
+    "attribute-name-only": {
+      "match": "([-\\w.:]+)(?=\\s|/?>)",
+      "name": "entity.other.attribute-name.veml"
+    },
+
+    "entity-reference": {
+      "match": "(&)([-\\w]+|#\\d+|#x[\\da-fA-F]+)(;)",
+      "captures": {
+        "1": { "name": "punctuation.definition.constant.veml" },
+        "2": { "name": "constant.character.entity.veml" },
+        "3": { "name": "punctuation.definition.constant.veml" }
+      }
+    },
+
+    "bare-ampersand": {
+      "match": "&(?![-\\w]+;|#\\d+;|#x[\\da-fA-F]+;)",
+      "name": "invalid.illegal.bad-ampersand.veml"
+    }
+  }
+}

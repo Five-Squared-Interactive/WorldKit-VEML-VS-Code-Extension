@@ -1,0 +1,139 @@
+{
+  "VEML World Skeleton": {
+    "prefix": "veml-world",
+    "body": [
+      "<veml>",
+      "  <metadata>",
+      "    <title>${1:My World}</title>",
+      "  </metadata>",
+      "  <environment>",
+      "    <background>",
+      "      <lite-procedural-sky />",
+      "    </background>",
+      "    $0",
+      "  </environment>",
+      "</veml>"
+    ],
+    "description": "Complete VEML 3.0 world skeleton with metadata and environment"
+  },
+  "VEML Mesh Entity": {
+    "prefix": "veml-mesh",
+    "body": [
+      "<mesh id=\"${1:my-mesh}\" src=\"${2:model.glb}\">",
+      "  <scaletransform>",
+      "    <position x=\"${3:0}\" y=\"${4:0}\" z=\"${5:0}\" />",
+      "  </scaletransform>",
+      "  $0",
+      "</mesh>"
+    ],
+    "description": "Mesh entity with source file and position"
+  },
+  "VEML Environment": {
+    "prefix": "veml-environment",
+    "body": [
+      "<environment>",
+      "  <background>",
+      "    <lite-procedural-sky top-color=\"${1:#87CEEB}\" horizon-color=\"${2:#E0E8F0}\" bottom-color=\"${3:#8B7355}\" />",
+      "  </background>",
+      "  $0",
+      "</environment>"
+    ],
+    "description": "Environment block with procedural sky background"
+  },
+  "VEML Character": {
+    "prefix": "veml-character",
+    "body": [
+      "<character id=\"${1:player}\" tag=\"${2:player}\">",
+      "  <scaletransform>",
+      "    <position x=\"${3:0}\" y=\"${4:1}\" z=\"${5:0}\" />",
+      "    <rotation x=\"0\" y=\"0\" z=\"0\" w=\"1\" />",
+      "  </scaletransform>",
+      "  $0",
+      "</character>"
+    ],
+    "description": "Character entity with transform"
+  },
+  "VEML Multi-Entity Scene": {
+    "prefix": "veml-scene",
+    "body": [
+      "<veml>",
+      "  <metadata>",
+      "    <title>${1:My World}</title>",
+      "  </metadata>",
+      "  <environment>",
+      "    <background>",
+      "      <lite-procedural-sky />",
+      "    </background>",
+      "    <character id=\"${2:player}\" tag=\"player\">",
+      "      <scaletransform>",
+      "        <position x=\"0\" y=\"1\" z=\"0\" />",
+      "      </scaletransform>",
+      "    </character>",
+      "    <mesh id=\"${3:ground}\" src=\"${4:ground.glb}\" static=\"true\">",
+      "      <scaletransform>",
+      "        <position x=\"0\" y=\"0\" z=\"0\" />",
+      "        <scale x=\"10\" y=\"1\" z=\"10\" />",
+      "      </scaletransform>",
+      "    </mesh>",
+      "    <light id=\"${5:main-light}\" type=\"directional\" intensity=\"1\" />",
+      "  </environment>",
+      "</veml>"
+    ],
+    "description": "Multi-entity scene with character, ground, and light"
+  },
+  "VEML Light": {
+    "prefix": "veml-light",
+    "body": [
+      "<light id=\"${1:my-light}\" type=\"${2:directional}\" intensity=\"${3:1}\" color=\"${4:#FFFFFF}\">",
+      "  <scaletransform>",
+      "    <position x=\"${5:0}\" y=\"${6:10}\" z=\"${7:0}\" />",
+      "  </scaletransform>",
+      "</light>"
+    ],
+    "description": "Light entity with type, intensity, color, and position"
+  },
+  "VEML Canvas": {
+    "prefix": "veml-canvas",
+    "body": [
+      "<canvas id=\"${1:main-ui}\">",
+      "  <canvastransform>",
+      "    <position-percent x=\"${2:0.1}\" y=\"${3:0.1}\" />",
+      "    <size-percent x=\"${4:0.8}\" y=\"${5:0.8}\" />",
+      "  </canvastransform>",
+      "  <text id=\"${6:label}\" content=\"${7:Hello World}\" />",
+      "  <button id=\"${8:btn}\" label=\"${9:Click Me}\" on-click=\"${10:onButtonClick}\" />",
+      "</canvas>"
+    ],
+    "description": "UI canvas with text and button"
+  },
+  "VEML Scale Transform": {
+    "prefix": "veml-scaletransform",
+    "body": [
+      "<scaletransform>",
+      "  <position x=\"${1:0}\" y=\"${2:0}\" z=\"${3:0}\" />",
+      "  <rotation x=\"${4:0}\" y=\"${5:0}\" z=\"${6:0}\" w=\"${7:1}\" />",
+      "  <scale x=\"${8:1}\" y=\"${9:1}\" z=\"${10:1}\" />",
+      "</scaletransform>"
+    ],
+    "description": "Scale transform with position, rotation, and scale"
+  },
+  "VEML Metadata": {
+    "prefix": "veml-metadata",
+    "body": [
+      "<metadata>",
+      "  <title>${1:World Title}</title>",
+      "  $0",
+      "</metadata>"
+    ],
+    "description": "Metadata section with title"
+  },
+  "VEML Background": {
+    "prefix": "veml-background",
+    "body": [
+      "<background>",
+      "  <${1|lite-procedural-sky,panorama,color|} ${2}/>",
+      "</background>"
+    ],
+    "description": "Background with choice of sky type"
+  }
+}
