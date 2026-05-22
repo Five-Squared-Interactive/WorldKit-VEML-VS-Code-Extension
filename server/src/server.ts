@@ -21,6 +21,7 @@ import { getCompletionContext } from './completionContext.js';
 import { handleCompletion } from './completionProvider.js';
 import type { CompletionItem } from './completionProvider.js';
 import { EntityIndex } from './entityIndex.js';
+import { ScriptIndex } from './scriptIndex.js';
 import { handleDefinition } from './definitionProvider.js';
 import { handleReferences } from './referenceProvider.js';
 import { handleHover } from './hoverProvider.js';
@@ -30,6 +31,9 @@ import { validateAllDocuments } from './validateAllHandler.js';
 import { queryEntities } from './queryEntitiesHandler.js';
 import { resolveEntityReference } from './resolveEntityReferenceHandler.js';
 import { sourceRangeToLspRange } from './lspUtils.js';
+import { validateJsFile } from './jsValidator.js';
+import type { JsDiagnostic } from './jsValidator.js';
+import { VirtualDocService } from './virtualDocService.js';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
@@ -40,11 +44,20 @@ const parsedDocuments = new Map<string, VemlDocument>();
 /** Cross-file entity index for go-to-definition and find-all-references. */
 const entityIndex = new EntityIndex();
 
+/** Cross-file script reference index for VEML ↔ JS navigation. */
+const scriptIndex = new ScriptIndex();
+
+/** Inline script extraction and offset mapping. */
+const virtualDocService = new VirtualDocService();
+
 /** Per-URI debounce timers for validation. */
 const validationTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /** Per-URI debounce timers for scene change notifications. */
 const sceneChangeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** Per-URI debounce timers for JS validation. */
+const jsValidationTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /** Known project roots reported from the client. */
 const projectRoots = new Set<string>();
@@ -58,13 +71,58 @@ function scheduleValidation(uri: string, doc: VemlDocument): void {
   validationTimers.set(uri, setTimeout(() => {
     validationTimers.delete(uri);
     const start = Date.now();
-    const diagnostics = validateDocument(doc, entityIndex);
+    const vemlDiagnostics = validateDocument(doc, entityIndex);
+    const lspDiags = vemlDiagnostics.map(toLspDiagnostic);
+
+    // Validate inline <script> blocks
+    let inlineScriptCount = 0;
+    try {
+      const inlineScripts = virtualDocService.getInlineScripts(uri);
+      inlineScriptCount = inlineScripts.length;
+      const textDoc = documents.get(uri);
+      for (const block of inlineScripts) {
+        const jsDiags = validateJsFile(block.text, uri);
+        for (const jd of jsDiags) {
+          lspDiags.push(remapInlineJsDiag(jd, block.vemlOffset, textDoc));
+        }
+      }
+    } catch (err) {
+      connection.console.error(`[validator] Inline script validation failed for ${uri}: ${err}`);
+    }
+
     const elapsed = Date.now() - start;
     connection.console.log(
-      `[validator] Validated ${uri} in ${elapsed}ms (${diagnostics.length} diagnostics)`,
+      `[validator] Validated ${uri} in ${elapsed}ms (${lspDiags.length} diagnostics, ${inlineScriptCount} inline scripts)`,
     );
-    connection.sendDiagnostics({ uri, diagnostics: diagnostics.map(toLspDiagnostic) });
+    connection.sendDiagnostics({ uri, diagnostics: lspDiags });
   }, 200));
+}
+
+/** Remap a JS diagnostic from JS-local offsets to VEML document positions. */
+function remapInlineJsDiag(
+  diag: JsDiagnostic,
+  vemlOffset: number,
+  textDoc: TextDocument | undefined,
+): import('vscode-languageserver/node').Diagnostic {
+  const severityMap: Record<string, import('vscode-languageserver/node').DiagnosticSeverity> = {
+    error: 1, warning: 2, info: 3, hint: 4,
+  };
+
+  let startPos = { line: 0, character: 0 };
+  let endPos = { line: 0, character: 0 };
+
+  if (textDoc) {
+    startPos = textDoc.positionAt(vemlOffset + diag.range.start.offset);
+    endPos = textDoc.positionAt(vemlOffset + diag.range.end.offset);
+  }
+
+  return {
+    range: { start: startPos, end: endPos },
+    severity: severityMap[diag.severity],
+    code: diag.code,
+    source: diag.source,
+    message: diag.message,
+  };
 }
 
 function scheduleSceneChangeNotification(uri: string, changeType: 'added' | 'changed' | 'removed' = 'changed'): void {
@@ -74,6 +132,38 @@ function scheduleSceneChangeNotification(uri: string, changeType: 'added' | 'cha
     sceneChangeTimers.delete(uri);
     connection.sendNotification(LspNotifications.sceneDidChange, { uri, changeType });
   }, 500));
+}
+
+function scheduleJsValidation(uri: string, text: string): void {
+  const existing = jsValidationTimers.get(uri);
+  if (existing) clearTimeout(existing);
+  jsValidationTimers.set(uri, setTimeout(() => {
+    jsValidationTimers.delete(uri);
+    const start = Date.now();
+    const jsDiags = validateJsFile(text, uri);
+    const elapsed = Date.now() - start;
+    connection.console.log(
+      `[jsValidator] Validated ${uri} in ${elapsed}ms (${jsDiags.length} diagnostics)`,
+    );
+    connection.sendDiagnostics({ uri, diagnostics: jsDiags.map(jsDiagToLsp) });
+  }, 300));
+}
+
+/** Convert JsDiagnostic to LSP Diagnostic. */
+function jsDiagToLsp(diag: JsDiagnostic): import('vscode-languageserver/node').Diagnostic {
+  const severityMap: Record<string, import('vscode-languageserver/node').DiagnosticSeverity> = {
+    error: 1, warning: 2, info: 3, hint: 4,
+  };
+  return {
+    range: {
+      start: { line: diag.range.start.line - 1, character: diag.range.start.column },
+      end: { line: diag.range.end.line - 1, character: diag.range.end.column },
+    },
+    severity: severityMap[diag.severity],
+    code: diag.code,
+    source: diag.source,
+    message: diag.message,
+  };
 }
 
 connection.onInitialize((params: InitializeParams): InitializeResult => {
@@ -133,6 +223,8 @@ connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
         trackedVemlFileCount = Math.max(0, trackedVemlFileCount - 1);
         parsedDocuments.delete(uri);
         entityIndex.removeDocument(uri);
+        scriptIndex.removeDocument(uri);
+        virtualDocService.removeDocument(uri);
         connection.console.log(`[server] VEML file removed: ${uri} (total: ${trackedVemlFileCount})`);
         scheduleSceneChangeNotification(uri, 'removed');
       }
@@ -144,6 +236,15 @@ documents.onDidChangeContent((change) => {
   const uri = change.document.uri;
   const text = change.document.getText();
   const start = Date.now();
+  const languageId = change.document.languageId;
+
+  // Index and validate JS files
+  if (languageId === 'javascript') {
+    scriptIndex.indexJsFile(uri, text);
+    scheduleJsValidation(uri, text);
+    connection.console.log(`[scriptIndex] Indexed JS file ${uri}`);
+    return;
+  }
 
   try {
     const doc = parseVeml(text);
@@ -151,6 +252,8 @@ documents.onDidChangeContent((change) => {
 
     // Re-index entity definitions and references (removeDocument is called internally)
     entityIndex.indexDocument(uri, doc);
+    scriptIndex.indexDocument(uri, doc, text);
+    virtualDocService.indexDocument(uri, doc, text);
 
     const nodeCount = countNodes(doc);
     const elapsed = Date.now() - start;
@@ -166,8 +269,23 @@ documents.onDidChangeContent((change) => {
 
 documents.onDidClose((event) => {
   const uri = event.document.uri;
+  const languageId = event.document.languageId;
+
+  if (languageId === 'javascript') {
+    scriptIndex.removeJsFile(uri);
+    const jsTimer = jsValidationTimers.get(uri);
+    if (jsTimer) {
+      clearTimeout(jsTimer);
+      jsValidationTimers.delete(uri);
+    }
+    connection.sendDiagnostics({ uri, diagnostics: [] });
+    return;
+  }
+
   parsedDocuments.delete(uri);
   entityIndex.removeDocument(uri);
+  scriptIndex.removeDocument(uri);
+  virtualDocService.removeDocument(uri);
   const timer = validationTimers.get(uri);
   if (timer) {
     clearTimeout(timer);
@@ -224,7 +342,7 @@ connection.onCompletion((params) => {
     existingAttributes = findExistingAttributes(text, offset);
   }
 
-  const items = handleCompletion(ctx, existingAttributes);
+  const items = handleCompletion(ctx, { existingAttributes, scriptIndex, vemlUri: uri });
   const elapsed = Date.now() - start;
   connection.console.log(
     `[completion] Completed in ${elapsed}ms (${items.length} items) for ${uri}`,
@@ -275,7 +393,7 @@ connection.onDefinition((params) => {
   if (!parsed) return null;
 
   const offset = doc.offsetAt(params.position);
-  const result = handleDefinition(parsed, offset, entityIndex);
+  const result = handleDefinition(parsed, offset, entityIndex, uri);
   const elapsed = Date.now() - start;
 
   if (result) {

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { handleCompletion } from './completionProvider.js';
 import type { CompletionContext } from './completionContext.js';
+import { ScriptIndex } from './scriptIndex.js';
+import { parseVeml } from './vemlParser.js';
 
 function makeCtx(overrides: Partial<CompletionContext> & Pick<CompletionContext, 'kind'>): CompletionContext {
   return {
@@ -181,6 +183,154 @@ describe('handleCompletion', () => {
     const ctx = makeCtx({ kind: 'none' });
     const items = handleCompletion(ctx);
     expect(items).toHaveLength(0);
+  });
+
+  // ── Event handler completions ──────────────────────────────────
+
+  describe('event handler attribute value completions', () => {
+    function setupScriptIndex(): { scriptIndex: ScriptIndex; vemlUri: string } {
+      const vemlUri = 'file:///project/world.veml';
+      const veml = '<veml><metadata><script>Scripts/index.js</script></metadata></veml>';
+      const scriptIndex = new ScriptIndex();
+      scriptIndex.indexDocument(vemlUri, parseVeml(veml), veml);
+
+      const refs = scriptIndex.getScriptReferences(vemlUri);
+      scriptIndex.indexJsFile(refs[0].resolvedUri, 'function onLoaded() {}\nfunction onClick() {}');
+
+      return { scriptIndex, vemlUri };
+    }
+
+    it('suggests function names for on-load-event', () => {
+      const { scriptIndex, vemlUri } = setupScriptIndex();
+      const ctx = makeCtx({ kind: 'attributeValue', currentTagName: 'mesh', attributeName: 'on-load-event' });
+      const items = handleCompletion(ctx, { scriptIndex, vemlUri });
+
+      expect(items.length).toBe(2);
+      expect(items[0].label).toBe('onLoaded();');
+      expect(items[1].label).toBe('onClick();');
+    });
+
+    it('suggests function names for on-click', () => {
+      const { scriptIndex, vemlUri } = setupScriptIndex();
+      const ctx = makeCtx({ kind: 'attributeValue', currentTagName: 'button', attributeName: 'on-click' });
+      const items = handleCompletion(ctx, { scriptIndex, vemlUri });
+
+      expect(items.length).toBe(2);
+      expect(items.map((i) => i.label)).toContain('onLoaded();');
+    });
+
+    it('includes file name in detail', () => {
+      const { scriptIndex, vemlUri } = setupScriptIndex();
+      const ctx = makeCtx({ kind: 'attributeValue', currentTagName: 'mesh', attributeName: 'on-load-event' });
+      const items = handleCompletion(ctx, { scriptIndex, vemlUri });
+
+      expect(items[0].detail).toContain('index.js');
+    });
+
+    it('returns empty when no scriptIndex provided', () => {
+      const ctx = makeCtx({ kind: 'attributeValue', currentTagName: 'mesh', attributeName: 'on-load-event' });
+      const items = handleCompletion(ctx);
+
+      expect(items).toHaveLength(0);
+    });
+
+    it('returns empty when no scripts are referenced', () => {
+      const scriptIndex = new ScriptIndex();
+      const ctx = makeCtx({ kind: 'attributeValue', currentTagName: 'mesh', attributeName: 'on-load-event' });
+      const items = handleCompletion(ctx, { scriptIndex, vemlUri: 'file:///none.veml' });
+
+      expect(items).toHaveLength(0);
+    });
+
+    it('aggregates functions from multiple scripts', () => {
+      const vemlUri = 'file:///project/world.veml';
+      const veml = '<veml><metadata><script>Scripts/a.js</script><script>Scripts/b.js</script></metadata></veml>';
+      const scriptIndex = new ScriptIndex();
+      scriptIndex.indexDocument(vemlUri, parseVeml(veml), veml);
+
+      const refs = scriptIndex.getScriptReferences(vemlUri);
+      scriptIndex.indexJsFile(refs[0].resolvedUri, 'function foo() {}');
+      scriptIndex.indexJsFile(refs[1].resolvedUri, 'function bar() {}');
+
+      const ctx = makeCtx({ kind: 'attributeValue', currentTagName: 'mesh', attributeName: 'on-load-event' });
+      const items = handleCompletion(ctx, { scriptIndex, vemlUri });
+
+      expect(items).toHaveLength(2);
+      expect(items.map((i) => i.label).sort()).toEqual(['bar();', 'foo();']);
+    });
+  });
+
+  // ── Inline script completions ────────────────────────────────
+
+  describe('inline script content completions', () => {
+    it('suggests methods after ClassName.', () => {
+      const ctx = makeCtx({
+        kind: 'scriptContent',
+        scriptText: 'Vector3.',
+        scriptOffset: 8,
+      });
+      const items = handleCompletion(ctx);
+      expect(items.length).toBeGreaterThan(0);
+      expect(items.some((i) => i.label === 'Distance')).toBe(true);
+    });
+
+    it('suggests properties after ClassName. (direct API name)', () => {
+      const ctx = makeCtx({
+        kind: 'scriptContent',
+        scriptText: 'Vector3.',
+        scriptOffset: 8,
+      });
+      const items = handleCompletion(ctx);
+      expect(items.some((i) => i.label === 'x')).toBe(true);
+      expect(items.some((i) => i.label === 'y')).toBe(true);
+    });
+
+    it('filters methods by partial text', () => {
+      const ctx = makeCtx({
+        kind: 'scriptContent',
+        scriptText: 'Vector3.Dis',
+        scriptOffset: 11,
+      });
+      const items = handleCompletion(ctx);
+      expect(items.some((i) => i.label === 'Distance')).toBe(true);
+      expect(items.some((i) => i.label === 'Normalize')).toBe(false);
+    });
+
+    it('suggests API class names at word boundary', () => {
+      const ctx = makeCtx({
+        kind: 'scriptContent',
+        scriptText: 'Ent',
+        scriptOffset: 3,
+      });
+      const items = handleCompletion(ctx);
+      expect(items.some((i) => i.label === 'Entity')).toBe(true);
+    });
+
+    it('suggests constructable classes after new', () => {
+      const ctx = makeCtx({
+        kind: 'scriptContent',
+        scriptText: 'new Vec',
+        scriptOffset: 7,
+      });
+      const items = handleCompletion(ctx);
+      expect(items.some((i) => i.label === 'Vector3')).toBe(true);
+    });
+
+    it('returns empty for unknown class', () => {
+      const ctx = makeCtx({
+        kind: 'scriptContent',
+        scriptText: 'UnknownClass.',
+        scriptOffset: 13,
+      });
+      const items = handleCompletion(ctx);
+      expect(items).toHaveLength(0);
+    });
+
+    it('returns empty when scriptText is undefined', () => {
+      const ctx = makeCtx({ kind: 'scriptContent' });
+      const items = handleCompletion(ctx);
+      expect(items).toHaveLength(0);
+    });
   });
 
   // ── Performance ───────────────────────────────────────────────

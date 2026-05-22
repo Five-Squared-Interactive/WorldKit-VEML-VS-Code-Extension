@@ -2,8 +2,8 @@
   "name": "worldkit-vscode",
   "displayName": "WorldKit VEML",
   "description": "VEML language support for building virtual worlds — syntax highlighting, validation, autocomplete, and scene navigation.",
-  "version": "0.1.0",
-  "publisher": "fivesquared",
+  "version": "0.2.0",
+  "publisher": "FiveSquaredInteractive",
   "license": "MIT",
   "icon": "assets/icon.png",
   "galleryBanner": {
@@ -79,6 +79,10 @@
       {
         "language": "veml",
         "path": "./snippets/veml.json"
+      },
+      {
+        "language": "javascript",
+        "path": "./snippets/webverse-js.json"
       }
     ],
     "commands": [
@@ -113,6 +117,11 @@
     "url": "https://github.com/five-squared/NewMonorepo.git",
     "directory": "worldkit-vscode"
   },
+  "dependencies": {
+    "acorn": "^8.16.0",
+    "typescript": "^5.5.0",
+    "vscode-uri": "^3.1.0"
+  },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
     "@vitest/coverage-v8": "^4.1.2",
@@ -122,7 +131,6 @@
     "eslint": "^9.0.0",
     "prettier": "^3.0.0",
     "saxes": "^6.0.0",
-    "typescript": "^5.5.0",
     "typescript-eslint": "^8.0.0",
     "vitest": "^4.1.2",
     "vscode-languageclient": "^9.0.1",

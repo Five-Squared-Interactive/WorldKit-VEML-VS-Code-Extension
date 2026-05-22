@@ -90,7 +90,7 @@ This extension does not contribute any settings currently. All features activate
 
 ## Known Issues
 
-Report issues at the [GitHub issue tracker](https://github.com/Five-Squared-Interactive/WorldKit-VEML-VS-Code-Extension/issues).
+Report issues at the [GitHub issue tracker](https://github.com/five-squared/NewMonorepo/issues).
 
 ## Release Notes
 

@@ -103,12 +103,10 @@ const SCHEMAS: VemlElementSchema[] = [
   },
   {
     tagName: 'script',
-    description: 'Script reference attached to the world',
+    description: 'Script reference — text content is the script file path (e.g., Scripts/index.js) or inline JavaScript',
     allowedChildren: [],
     requiredAttributes: [],
-    optionalAttributes: [
-      { name: 'src', type: 'string', description: 'Script source file path' },
-    ],
+    optionalAttributes: [],
     allowedParents: ['metadata'],
   },
   {

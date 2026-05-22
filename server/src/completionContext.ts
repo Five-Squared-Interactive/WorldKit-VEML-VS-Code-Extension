@@ -3,12 +3,18 @@
  * Scans backwards from cursor position to determine what kind of completion to provide.
  */
 
+import { isFilePath } from './textContentUtils.js';
+
 export interface CompletionContext {
-  kind: 'element' | 'attributeName' | 'attributeValue' | 'none';
+  kind: 'element' | 'attributeName' | 'attributeValue' | 'scriptContent' | 'none';
   parentTagName?: string;
   currentTagName?: string;
   attributeName?: string;
   partialText?: string;
+  /** For scriptContent: the extracted inline JS text. */
+  scriptText?: string;
+  /** For scriptContent: cursor offset within the JS text. */
+  scriptOffset?: number;
 }
 
 const NONE: CompletionContext = Object.freeze({ kind: 'none' }) as CompletionContext;
@@ -19,6 +25,10 @@ const NONE: CompletionContext = Object.freeze({ kind: 'none' }) as CompletionCon
  */
 export function getCompletionContext(text: string, offset: number): CompletionContext {
   if (text.length === 0 || offset < 0) return NONE;
+
+  // Check if cursor is inside an inline <script> block
+  const scriptCtx = findInlineScriptContext(text, offset);
+  if (scriptCtx) return scriptCtx;
 
   // Check if inside a comment
   if (isInsideComment(text, offset)) return NONE;
@@ -258,4 +268,44 @@ function findParentTagName(text: string, beforeOffset: number): string | undefin
   }
 
   return openTags.length > 0 ? openTags[openTags.length - 1] : undefined;
+}
+
+/**
+ * Check if the cursor is inside an inline <script> block.
+ * Scans backward for <script> opening tag and forward for </script>.
+ * Returns scriptContent context if cursor is between them and content is not a file path.
+ */
+function findInlineScriptContext(text: string, offset: number): CompletionContext | null {
+  // Find the most recent <script> or <script ...> opening tag before offset
+  const openPattern = /<script(?:\s[^>]*)?>|<\/script>/gi;
+  let lastOpenEnd = -1;
+
+  let match: RegExpExecArray | null;
+  while ((match = openPattern.exec(text)) !== null) {
+    if (match.index >= offset) break;
+    if (match[0].startsWith('</')) {
+      lastOpenEnd = -1; // Reset — we passed a closing tag
+    } else {
+      lastOpenEnd = match.index + match[0].length;
+    }
+  }
+
+  if (lastOpenEnd === -1 || lastOpenEnd > offset) return null;
+
+  // Find the next </script> after the cursor
+  const closeIdx = text.indexOf('</script>', offset);
+  if (closeIdx === -1) return null;
+
+  // Extract the content between the opening tag and closing tag
+  const content = text.substring(lastOpenEnd, closeIdx);
+  const trimmed = content.trim();
+
+  // If it looks like a file path, it's not inline JS
+  if (trimmed.length > 0 && isFilePath(trimmed)) return null;
+
+  return {
+    kind: 'scriptContent',
+    scriptText: content,
+    scriptOffset: offset - lastOpenEnd,
+  };
 }

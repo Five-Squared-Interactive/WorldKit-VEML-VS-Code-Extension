@@ -192,4 +192,33 @@ describe('getCompletionContext', () => {
     expect(ctx.currentTagName).toBe('light');
     expect(ctx.attributeName).toBe('type');
   });
+
+  // ── Inline script content ─────────────────────────────────────
+
+  it('detects inline script content', () => {
+    const { text, offset } = docAndPos('<veml><metadata><script>var x = |</script></metadata></veml>');
+    const ctx = getCompletionContext(text, offset);
+    expect(ctx.kind).toBe('scriptContent');
+    expect(ctx.scriptText).toContain('var x = ');
+    expect(ctx.scriptOffset).toBeDefined();
+  });
+
+  it('does not detect script content for file paths', () => {
+    const { text, offset } = docAndPos('<veml><metadata><script>Scripts/ind|ex.js</script></metadata></veml>');
+    const ctx = getCompletionContext(text, offset);
+    expect(ctx.kind).not.toBe('scriptContent');
+  });
+
+  it('detects script content with API calls', () => {
+    const { text, offset } = docAndPos('<veml><metadata><script>Entity.|</script></metadata></veml>');
+    const ctx = getCompletionContext(text, offset);
+    expect(ctx.kind).toBe('scriptContent');
+    expect(ctx.scriptText).toContain('Entity.');
+  });
+
+  it('does not detect script content outside <script> tags', () => {
+    const { text, offset } = docAndPos('<veml><metadata>|</metadata></veml>');
+    const ctx = getCompletionContext(text, offset);
+    expect(ctx.kind).not.toBe('scriptContent');
+  });
 });

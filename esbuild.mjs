@@ -26,7 +26,7 @@ const serverOptions = {
   ...sharedOptions,
   entryPoints: ['server/src/server.ts'],
   outfile: 'dist/server.js',
-  external: [],
+  external: ['typescript'],
 };
 
 async function build() {

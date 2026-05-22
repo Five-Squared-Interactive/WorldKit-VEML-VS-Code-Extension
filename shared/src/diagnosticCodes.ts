@@ -111,12 +111,54 @@ const SCHEMA_CODES: DiagnosticCode[] = [
   },
 ];
 
+// ── JS Diagnostic Codes (JS200–JS399) ──────────────────────────────
+
+const JS_CODES: DiagnosticCode[] = [
+  {
+    code: 'JS200',
+    severity: 'warning',
+    messageTemplate: '"{class}" is not a known WebVerse API',
+    suggestionTemplate: 'Check the WebVerse JavaScript API reference for available classes',
+  },
+  {
+    code: 'JS201',
+    severity: 'warning',
+    messageTemplate: '"{class}.{method}" is not a known method',
+    suggestionTemplate: 'Check the WebVerse API reference for methods on "{class}"',
+  },
+  {
+    code: 'JS202',
+    severity: 'info',
+    messageTemplate: '"{class}" requires the {capability} capability at runtime',
+    suggestionTemplate: undefined,
+  },
+  {
+    code: 'JS300',
+    severity: 'warning',
+    messageTemplate: '"{class}.{method}" expects {expected} argument(s), got {actual}',
+    suggestionTemplate: undefined,
+  },
+  {
+    code: 'JS301',
+    severity: 'warning',
+    messageTemplate: 'Script file "{path}" not found',
+    suggestionTemplate: 'Check that the file path is correct relative to the VEML document',
+  },
+  {
+    code: 'JS302',
+    severity: 'info',
+    messageTemplate: 'Failed to parse script "{path}": {detail}',
+    suggestionTemplate: undefined,
+  },
+];
+
 // ── Registry ────────────────────────────────────────────────────────
 
 export const ALL_DIAGNOSTIC_CODES: readonly DiagnosticCode[] = [
   ...PARSE_CODES,
   ...VALIDATION_CODES,
   ...SCHEMA_CODES,
+  ...JS_CODES,
 ];
 
 const codeMap = new Map<string, DiagnosticCode>(

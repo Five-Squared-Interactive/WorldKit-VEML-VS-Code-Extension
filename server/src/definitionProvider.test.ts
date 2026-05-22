@@ -90,6 +90,66 @@ describe('handleDefinition', () => {
     expect(result).toBeNull();
   });
 
+  // ── Script definition ─────────────────────────────────────────
+
+  it('resolves <script> text content to JS file URI', () => {
+    const text = '<veml><metadata><script>Scripts/index.js</script></metadata></veml>';
+    const doc = parseVeml(text);
+    const index = new EntityIndex();
+
+    const offset = text.indexOf('Scripts/index.js') + 3; // inside the path
+    const result = handleDefinition(doc, offset, index, 'file:///project/world.veml');
+
+    expect(result).not.toBeNull();
+    expect(result!.uri).toContain('Scripts');
+    expect(result!.uri).toContain('index.js');
+  });
+
+  it('returns null for inline JS in <script>', () => {
+    const text = '<veml><metadata><script>console.log("hello");</script></metadata></veml>';
+    const doc = parseVeml(text);
+    const index = new EntityIndex();
+
+    const offset = text.indexOf('console') + 2;
+    const result = handleDefinition(doc, offset, index, 'file:///project/world.veml');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null for <script> when cursor is outside text content', () => {
+    const text = '<veml><metadata><script>Scripts/index.js</script></metadata></veml>';
+    const doc = parseVeml(text);
+    const index = new EntityIndex();
+
+    // Cursor on <veml> tag, not inside <script>
+    const offset = 2;
+    const result = handleDefinition(doc, offset, index, 'file:///project/world.veml');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null for script definition when docUri is not provided', () => {
+    const text = '<veml><metadata><script>Scripts/index.js</script></metadata></veml>';
+    const doc = parseVeml(text);
+    const index = new EntityIndex();
+
+    const offset = text.indexOf('Scripts/index.js') + 3;
+    const result = handleDefinition(doc, offset, index); // no docUri
+
+    expect(result).toBeNull();
+  });
+
+  it('skips https URLs in <script> elements', () => {
+    const text = '<veml><metadata><script>https://cdn.example.com/lib.js</script></metadata></veml>';
+    const doc = parseVeml(text);
+    const index = new EntityIndex();
+
+    const offset = text.indexOf('https://') + 5;
+    const result = handleDefinition(doc, offset, index, 'file:///project/world.veml');
+
+    expect(result).toBeNull();
+  });
+
   // ── Performance ─────────────────────────────────────────────
 
   it('resolves definition within 200ms for large index', () => {

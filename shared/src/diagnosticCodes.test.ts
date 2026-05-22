@@ -10,9 +10,9 @@ describe('DiagnosticCode Registry', () => {
     expect(ALL_DIAGNOSTIC_CODES.length).toBeGreaterThan(0);
   });
 
-  it('every code has the format VEMLnnn', () => {
+  it('every code has a valid format (VEMLnnn or JSnnn)', () => {
     for (const dc of ALL_DIAGNOSTIC_CODES) {
-      expect(dc.code).toMatch(/^VEML\d{3}$/);
+      expect(dc.code).toMatch(/^(VEML|JS)\d{3}$/);
     }
   });
 
@@ -69,14 +69,26 @@ describe('DiagnosticCode Registry', () => {
     expect(schemaCodes.length).toBeGreaterThan(0);
   });
 
-  it('parse error codes have severity error', () => {
-    const parseCodes = ALL_DIAGNOSTIC_CODES.filter((dc) => {
-      const num = parseInt(dc.code.slice(4), 10);
-      return num >= 1 && num <= 99;
-    });
+  it('VEML parse error codes have severity error', () => {
+    const parseCodes = ALL_DIAGNOSTIC_CODES.filter((dc) =>
+      dc.code.startsWith('VEML') && parseInt(dc.code.slice(4), 10) <= 99,
+    );
     for (const dc of parseCodes) {
       expect(dc.severity).toBe('error');
     }
+  });
+
+  it('has JS diagnostic codes', () => {
+    const jsCodes = ALL_DIAGNOSTIC_CODES.filter((dc) => dc.code.startsWith('JS'));
+    expect(jsCodes.length).toBeGreaterThan(0);
+  });
+
+  it('JS diagnostic codes are retrievable', () => {
+    expect(getDiagnosticCode('JS200')).toBeDefined();
+    expect(getDiagnosticCode('JS201')).toBeDefined();
+    expect(getDiagnosticCode('JS300')).toBeDefined();
+    expect(getDiagnosticCode('JS301')).toBeDefined();
+    expect(getDiagnosticCode('JS302')).toBeDefined();
   });
 
   it('schema error codes for unknown elements have a suggestion', () => {

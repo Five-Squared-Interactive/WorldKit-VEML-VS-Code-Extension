@@ -7,7 +7,9 @@ import {
   getElementSchema,
   ELEMENT_SCHEMAS,
 } from '../../shared/src/index.js';
+import { getApiClass, API_CLASS_NAMES } from '../../shared/src/jsApiSchema.js';
 import type { CompletionContext } from './completionContext.js';
+import type { ScriptIndex } from './scriptIndex.js';
 
 export interface CompletionItem {
   label: string;
@@ -26,14 +28,27 @@ export interface CompletionItem {
  * @param ctx Completion context from getCompletionContext()
  * @param existingAttributes Optional list of attribute names already present on the element (to filter out)
  */
-export function handleCompletion(ctx: CompletionContext, existingAttributes?: string[]): CompletionItem[] {
+export interface CompletionOptions {
+  existingAttributes?: string[];
+  scriptIndex?: ScriptIndex;
+  vemlUri?: string;
+}
+
+export function handleCompletion(ctx: CompletionContext, existingAttributesOrOptions?: string[] | CompletionOptions): CompletionItem[] {
+  // Support both old signature (string[]) and new options object
+  const options: CompletionOptions = Array.isArray(existingAttributesOrOptions)
+    ? { existingAttributes: existingAttributesOrOptions }
+    : existingAttributesOrOptions ?? {};
+
   switch (ctx.kind) {
     case 'element':
       return elementCompletions(ctx.parentTagName);
     case 'attributeName':
-      return attributeNameCompletions(ctx.currentTagName, existingAttributes);
+      return attributeNameCompletions(ctx.currentTagName, options.existingAttributes);
     case 'attributeValue':
-      return attributeValueCompletions(ctx.currentTagName, ctx.attributeName);
+      return attributeValueCompletions(ctx.currentTagName, ctx.attributeName, options.scriptIndex, options.vemlUri);
+    case 'scriptContent':
+      return scriptContentCompletions(ctx.scriptText, ctx.scriptOffset);
     case 'none':
       return [];
   }
@@ -122,8 +137,27 @@ function attributeNameCompletions(tagName?: string, existingAttributes?: string[
 /**
  * Attribute value completions — suggest valid values for enum/boolean attributes.
  */
-function attributeValueCompletions(tagName?: string, attributeName?: string): CompletionItem[] {
+/** Attribute names that reference JS function names. */
+const EVENT_HANDLER_ATTRIBUTES = new Set(['on-load-event', 'on-click']);
+
+function attributeValueCompletions(tagName?: string, attributeName?: string, scriptIndex?: ScriptIndex, vemlUri?: string): CompletionItem[] {
   if (!tagName || !attributeName) return [];
+
+  // Event handler attributes — suggest JS function names
+  if (EVENT_HANDLER_ATTRIBUTES.has(attributeName) && scriptIndex && vemlUri) {
+    const funcs = scriptIndex.getAllFunctionsForVeml(vemlUri);
+    return funcs.map((fn, idx) => {
+      const filename = fn.uri.split('/').pop() ?? fn.uri;
+      return {
+        label: `${fn.name}();`,
+        kind: 'value' as const,
+        detail: `from ${filename}`,
+        insertText: `${fn.name}();`,
+        sortText: `${idx}-${fn.name}`,
+      };
+    });
+  }
+
   const schema = getElementSchema(tagName);
   if (!schema) return [];
 
@@ -146,6 +180,93 @@ function attributeValueCompletions(tagName?: string, attributeName?: string): Co
       kind: 'enum' as const,
       sortText: `${idx}-${val}`,
     }));
+  }
+
+  return [];
+}
+
+/**
+ * Script content completions — suggest WebVerse API methods based on partial text.
+ * Uses schema-driven fallback: if cursor is after "ClassName.", return that class's methods.
+ * If cursor is at word boundary, suggest all API class names.
+ */
+function scriptContentCompletions(scriptText?: string, scriptOffset?: number): CompletionItem[] {
+  if (!scriptText || scriptOffset === undefined) return [];
+
+  // Get the text before cursor
+  const textBefore = scriptText.substring(0, scriptOffset);
+
+  // Check for "ClassName." pattern — suggest methods
+  const dotMatch = textBefore.match(/\b([A-Z]\w*)\.\s*(\w*)$/);
+  if (dotMatch) {
+    const className = dotMatch[1];
+    const partial = dotMatch[2] || '';
+    const classSchema = getApiClass(className);
+    if (classSchema) {
+      const items: CompletionItem[] = [];
+      let idx = 0;
+
+      // Methods
+      for (const method of classSchema.methods) {
+        if (partial && !method.name.toLowerCase().startsWith(partial.toLowerCase())) continue;
+        const sig = method.overloads[0];
+        const params = sig ? sig.params.map((p) => p.name).join(', ') : '';
+        items.push({
+          label: method.name,
+          kind: 'value',
+          detail: `${method.isStatic ? 'static ' : ''}${method.name}(${params}): ${sig?.returnType ?? 'void'}`,
+          documentation: `${className}.${method.name}`,
+          insertText: `${method.name}($0)`,
+          insertTextFormat: 'snippet',
+          sortText: `${idx++}-${method.name}`,
+        });
+      }
+
+      // Properties
+      for (const prop of classSchema.properties) {
+        if (partial && !prop.name.toLowerCase().startsWith(partial.toLowerCase())) continue;
+        items.push({
+          label: prop.name,
+          kind: 'property',
+          detail: `${prop.readonly ? 'readonly ' : ''}${prop.name}: ${prop.type}`,
+          sortText: `${idx++}-${prop.name}`,
+        });
+      }
+
+      return items;
+    }
+  }
+
+  // Check for "new ClassName(" — suggest constructable classes
+  const newMatch = textBefore.match(/\bnew\s+(\w*)$/);
+  if (newMatch) {
+    const partial = newMatch[1] || '';
+    return API_CLASS_NAMES
+      .filter((name) => {
+        if (partial && !name.toLowerCase().startsWith(partial.toLowerCase())) return false;
+        const schema = getApiClass(name);
+        return schema?.isConstructable === true;
+      })
+      .map((name, idx) => ({
+        label: name,
+        kind: 'value' as const,
+        detail: getApiClass(name)!.description,
+        sortText: `${idx}-${name}`,
+      }));
+  }
+
+  // At word boundary with capital letter — suggest API class names
+  const wordMatch = textBefore.match(/\b([A-Z]\w*)$/);
+  if (wordMatch) {
+    const partial = wordMatch[1];
+    return API_CLASS_NAMES
+      .filter((name) => name.toLowerCase().startsWith(partial.toLowerCase()))
+      .map((name, idx) => ({
+        label: name,
+        kind: 'value' as const,
+        detail: getApiClass(name)!.description,
+        sortText: `${idx}-${name}`,
+      }));
   }
 
   return [];

@@ -1,16 +1,23 @@
 /**
- * Go-to-definition provider for VEML entity references.
- * Resolves entity `ref="..."` values to their `id="..."` definitions.
+ * Go-to-definition provider for VEML entity references and script paths.
+ * Resolves entity `ref="..."` values to their `id="..."` definitions,
+ * and `<script>path.js</script>` text content to JS file locations.
  */
 
+import * as path from 'node:path';
 import type { VemlDocument, VemlNode, VemlAttribute, SourceRange } from '../../shared/src/index.js';
-import { visitNode } from '../../shared/src/index.js';
+import { visitNode, NodeKind } from '../../shared/src/index.js';
 import type { EntityIndex } from './entityIndex.js';
+import { getTextContent, isFilePath } from './textContentUtils.js';
+import { URI } from 'vscode-uri';
 
 export interface DefinitionLocation {
   uri: string;
   range: SourceRange;
 }
+
+/** Maximum number of `..` path traversal levels allowed. */
+const MAX_PARENT_TRAVERSAL = 10;
 
 /**
  * Find the definition for the entity reference at the given offset.
@@ -20,8 +27,15 @@ export function handleDefinition(
   doc: VemlDocument,
   offset: number,
   entityIndex: EntityIndex,
+  docUri?: string,
 ): DefinitionLocation | null {
   if (!doc.root) return null;
+
+  // Check if cursor is on a <script> text content first
+  if (docUri) {
+    const scriptDef = findScriptDefinition(doc, offset, docUri);
+    if (scriptDef) return scriptDef;
+  }
 
   const hit = findAttributeValueAtOffset(doc.root, offset);
   if (!hit) return null;
@@ -43,6 +57,62 @@ export function handleDefinition(
   }
 
   return null;
+}
+
+/**
+ * Check if cursor is inside a <script> element's text content and resolve to file.
+ */
+function findScriptDefinition(
+  doc: VemlDocument,
+  offset: number,
+  docUri: string,
+): DefinitionLocation | null {
+  if (!doc.root) return null;
+
+  let result: DefinitionLocation | null = null;
+
+  visitNode(doc.root, {
+    enter(node) {
+      if (result) return false;
+
+      // Only interested in <script> nodes
+      if (node.kind !== NodeKind.Script) return;
+
+      // Check if offset is within this node's range
+      if (offset < node.range.start.offset || offset > node.range.end.offset) return;
+
+      const content = getTextContent(node, doc.text);
+      if (!content) return;
+
+      // Check offset is within the text content range
+      if (offset < content.range.start.offset || offset > content.range.end.offset) return;
+
+      // Only handle file paths, not inline JS
+      if (!isFilePath(content.text)) return;
+
+      // Skip external URLs
+      if (content.text.startsWith('http://') || content.text.startsWith('https://')) return;
+
+      // Check for excessive parent traversal
+      const parentLevels = (content.text.match(/\.\.\//g) || []).length;
+      if (parentLevels > MAX_PARENT_TRAVERSAL) return;
+
+      // Resolve relative to VEML file directory
+      const vemlDir = path.dirname(URI.parse(docUri).fsPath);
+      const resolvedPath = path.resolve(vemlDir, content.text);
+      const targetUri = URI.file(resolvedPath).toString();
+
+      result = {
+        uri: targetUri,
+        range: {
+          start: { line: 1, column: 0, offset: 0 },
+          end: { line: 1, column: 0, offset: 0 },
+        },
+      };
+    },
+  });
+
+  return result;
 }
 
 /**

@@ -24,6 +24,7 @@ import {
 import { ProjectDiscovery } from './projectDiscovery.js';
 import { SceneOutlineProvider } from './sceneOutlineProvider.js';
 import { registerNewWorldProjectCommand } from './scaffolding/newWorldProjectCommand.js';
+import { JsconfigManager } from './jsconfigManager.js';
 import { createVemlWorldApi } from './api/vemlWorldApi.js';
 import type { VemlWorldApi } from '../../shared/src/apiTypes.js';
 import { Tier } from '../../shared/src/tier.types.js';
@@ -89,6 +90,11 @@ async function runDiscovery(
 
   // Register scaffolding command (available even without language server)
   registerNewWorldProjectCommand(context, outputChannel);
+
+  // Deploy WebVerse type definitions for JS/TS autocomplete
+  if (projectDetected) {
+    await JsconfigManager.ensureTypes(context, outputChannel);
+  }
 
   if (!projectDetected) {
     outputChannel.appendLine('[activation] No VEML projects found — extension idle');

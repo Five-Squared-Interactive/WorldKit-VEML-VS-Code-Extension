@@ -1,0 +1,199 @@
+{
+  "WebVerse Entity Create": {
+    "prefix": "wv-entity-create",
+    "body": [
+      "MeshEntity.Create(",
+      "  \"${1:entity-id}\",",
+      "  null,",
+      "  \"${2:model.glb}\",",
+      "  new Vector3(${3:0}, ${4:0}, ${5:0}),",
+      "  new Quaternion(0, 0, 0, 1),",
+      "  new Vector3(1, 1, 1),",
+      "  function(entity) {",
+      "    entity.SetVisibility(true, true);",
+      "    $0",
+      "  }",
+      ");"
+    ],
+    "description": "Create a MeshEntity with position, rotation, scale, and onLoaded callback"
+  },
+  "WebVerse Entity Get": {
+    "prefix": "wv-entity-get",
+    "body": [
+      "var ${1:entity} = Entity.Get(\"${2:entity-id}\");",
+      "if (${1:entity} !== null) {",
+      "  $0",
+      "}"
+    ],
+    "description": "Get an entity by ID with null check"
+  },
+  "WebVerse Input Key Handler": {
+    "prefix": "wv-input-handler",
+    "body": [
+      "Input.SetKeyDown(\"${1:key}\", function() {",
+      "  $0",
+      "});"
+    ],
+    "description": "Input key down event handler"
+  },
+  "WebVerse Mouse Handler": {
+    "prefix": "wv-mouse-handler",
+    "body": [
+      "Input.SetMouseDown(function(position) {",
+      "  var hit = Input.Raycast(position);",
+      "  if (hit !== null) {",
+      "    $0",
+      "  }",
+      "});"
+    ],
+    "description": "Mouse down handler with raycast"
+  },
+  "WebVerse Update Loop": {
+    "prefix": "wv-update-loop",
+    "body": [
+      "Time.SetInterval(function() {",
+      "  var dt = Time.deltaTime;",
+      "  $0",
+      "}, ${1:16});"
+    ],
+    "description": "Periodic update loop using Time.SetInterval"
+  },
+  "WebVerse HTTP GET": {
+    "prefix": "wv-http-get",
+    "body": [
+      "HTTPNetworking.Get(",
+      "  \"${1:https://api.example.com/data}\",",
+      "  function(response) {",
+      "    var data = JSON.parse(response);",
+      "    $0",
+      "  },",
+      "  function(error) {",
+      "    Logging.LogError(\"HTTP error: \" + error);",
+      "  }",
+      ");"
+    ],
+    "description": "HTTP GET request with success and error handlers"
+  },
+  "WebVerse WebSocket": {
+    "prefix": "wv-websocket",
+    "body": [
+      "var ws = new WebSocket(\"${1:wss://example.com}\");",
+      "ws.onopen = function() {",
+      "  Logging.Log(\"WebSocket connected\");",
+      "  $0",
+      "};",
+      "ws.onmessage = function(message) {",
+      "  Logging.Log(\"Received: \" + message);",
+      "};",
+      "ws.onerror = function(error) {",
+      "  Logging.LogError(\"WebSocket error: \" + error);",
+      "};",
+      "ws.onclose = function() {",
+      "  Logging.Log(\"WebSocket closed\");",
+      "};"
+    ],
+    "description": "WebSocket connection with all event handlers"
+  },
+  "WebVerse MQTT Client": {
+    "prefix": "wv-mqtt-client",
+    "body": [
+      "var mqtt = new MQTTClient(\"${1:broker.example.com}\", ${2:1883});",
+      "mqtt.Subscribe(\"${3:topic}\", function(message) {",
+      "  Logging.Log(\"MQTT received: \" + message);",
+      "  $0",
+      "});",
+      "mqtt.Connect();"
+    ],
+    "description": "MQTT client connection and topic subscription"
+  },
+  "WebVerse Camera Setup": {
+    "prefix": "wv-camera-setup",
+    "body": [
+      "var ${1:entity} = Entity.Get(\"${2:entity-id}\");",
+      "if (${1:entity} !== null) {",
+      "  Camera.SetFollowEntity(${1:entity});",
+      "  Camera.SetOffset(new Vector3(${3:0}, ${4:2}, ${5:-5}));",
+      "  $0",
+      "}"
+    ],
+    "description": "Camera follow entity setup with offset"
+  },
+  "WebVerse World Events": {
+    "prefix": "wv-world-events",
+    "body": [
+      "World.OnLoad(function() {",
+      "  Logging.Log(\"World loaded\");",
+      "  $0",
+      "});",
+      "",
+      "World.OnError(function(error) {",
+      "  Logging.LogError(\"World error: \" + error);",
+      "});"
+    ],
+    "description": "World lifecycle event listeners"
+  },
+  "WebVerse Local Storage": {
+    "prefix": "wv-local-storage",
+    "body": [
+      "// Save",
+      "LocalStorage.Set(\"${1:key}\", JSON.stringify(${2:value}));",
+      "",
+      "// Load",
+      "var raw = LocalStorage.Get(\"${1:key}\");",
+      "if (raw !== null) {",
+      "  var ${3:data} = JSON.parse(raw);",
+      "  $0",
+      "}"
+    ],
+    "description": "LocalStorage get/set pattern with JSON serialization"
+  },
+  "WebVerse Collision Handler": {
+    "prefix": "wv-collision-handler",
+    "body": [
+      "var ${1:entity} = Entity.Get(\"${2:entity-id}\");",
+      "if (${1:entity} !== null) {",
+      "  ${1:entity}.SetOnCollisionEnter(function(other) {",
+      "    Logging.Log(\"Collision with: \" + other.GetTag());",
+      "    $0",
+      "  });",
+      "  ${1:entity}.SetOnCollisionExit(function(other) {",
+      "    Logging.Log(\"Collision ended with: \" + other.GetTag());",
+      "  });",
+      "}"
+    ],
+    "description": "Entity collision enter/exit event handlers"
+  },
+  "WebVerse Light Create": {
+    "prefix": "wv-light-create",
+    "body": [
+      "LightEntity.Create(",
+      "  \"${1:light-id}\",",
+      "  null,",
+      "  \"${2|directional,point,spot|}\",",
+      "  new Vector3(${3:0}, ${4:5}, ${5:0}),",
+      "  new Quaternion(0, 0, 0, 1),",
+      "  function(light) {",
+      "    $0",
+      "  }",
+      ");"
+    ],
+    "description": "Create a light entity (directional, point, or spot)"
+  },
+  "WebVerse Text Create": {
+    "prefix": "wv-text-create",
+    "body": [
+      "TextEntity.Create(",
+      "  \"${1:text-id}\",",
+      "  null,",
+      "  \"${2:Hello World}\",",
+      "  ${3:24},",
+      "  new Vector3(${4:0}, ${5:2}, ${6:0}),",
+      "  new Quaternion(0, 0, 0, 1),",
+      "  function(text) {",
+      "    $0",
+      "  }",
+      ");"
+    ],
+    "description": "Create a text display entity"
+  }
+}
